@@ -13,7 +13,7 @@
         </service>
 
         <service id="broadway.auditing.command_logger" class="Broadway\Auditing\CommandLogger">
-            <argument><!-- logger --></argument>
+            <argument type="service" id="logger" /><tag name="monolog.logger" channel="commands" />
             <argument type="service" id="broadway.auditing.serializer" />
             <tag name="broadway.event_listener" event="broadway.command_handling.command_success" method="onCommandHandlingSuccess" />
             <tag name="broadway.event_listener" event="broadway.command_handling.command_failure" method="onCommandHandlingFailure" />
