@@ -218,6 +218,20 @@ class ElasticSearchRepository implements RepositoryInterface
     }
 
     /**
+     * Check if the index has already been created
+     * @return bool
+     */
+    public function indexExists()
+    {
+        $indexParams = array(
+            'index' => $this->index
+        );
+
+        return $this->client->indices()->exists($indexParams);
+
+    }
+
+    /**
      * Creates the index for this repository's ReadModel.
      *
      * @return boolean True, if the index was successfully created
