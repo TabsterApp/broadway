@@ -96,4 +96,10 @@ class InMemoryRepository implements RepositoryInterface, TransferableInterface
     {
         unset($this->data[(string) $id]);
     }
+
+    public function indexExists()
+    {
+        return true;
+    }
+
 }
