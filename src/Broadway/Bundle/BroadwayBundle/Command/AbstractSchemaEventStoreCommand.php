@@ -35,6 +35,7 @@ abstract class AbstractSchemaEventStoreCommand extends DoctrineCommand
     protected function configure()
     {
         $this
+            ->addArgument('eventStore', 'e', InputOption::VALUE_OPTIONAL, 'Specifies which event store to create')
             ->addOption(
                 'connection',
                 'c',
@@ -48,7 +49,9 @@ abstract class AbstractSchemaEventStoreCommand extends DoctrineCommand
      */
     protected function initialize(InputInterface $input, OutputInterface $output)
     {
-        $databaseConnectionName = $input->getOption('connection') ?: $this->getContainer()->getParameter('broadway.event_store.dbal.connection');
+        $databaseConnectionName = $input->getOption('connection') ?: $this->getContainer()->getParameter(
+            'broadway.event_store.dbal.connection'
+        );
         Assertion::string($databaseConnectionName, 'Input option "connection" must be of type `string`.');
 
         try {
@@ -63,9 +66,9 @@ abstract class AbstractSchemaEventStoreCommand extends DoctrineCommand
      *
      * @throws \RuntimeException
      */
-    protected function getEventStore()
+    protected function getEventStore($eventStore)
     {
-        $eventStore = $this->getContainer()->get('broadway.event_store');
+        $eventStore = $this->getContainer()->get($eventStore);
 
         if (!$eventStore instanceof DBALEventStore) {
             throw new \RuntimeException("'broadway.event_store' must be configured as an instance of DBALEventStore");
