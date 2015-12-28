@@ -132,6 +132,11 @@ class BroadwayExtension extends Extension
         );
 
         $container->setParameter(
+            'broadway.event_store.dbal.snapshot_table',
+            $config['dbal']['snapshot_table']
+        );
+
+        $container->setParameter(
             'broadway.event_store.dbal.use_binary',
             $config['dbal']['use_binary']
         );
