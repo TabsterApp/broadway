@@ -53,9 +53,12 @@ EOT
         }
 
         $error = false;
+
+        $eventStore = $input->getOption('eventStore') ?: 'broadway.event_store';
+
         try {
             $schemaManager = $this->connection->getSchemaManager();
-            $eventStore    = $this->getEventStore();
+            $eventStore    = $this->getEventStore($eventStore);
 
             $table = $eventStore->configureTable();
             if ($schemaManager->tablesExist(array($table->getName()))) {
