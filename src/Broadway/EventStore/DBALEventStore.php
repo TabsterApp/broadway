@@ -23,6 +23,7 @@ use Broadway\Serializer\SerializerInterface;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Schema\Schema;
+use Doctrine\DBAL\Statement;
 use Doctrine\DBAL\Version;
 use Rhumsaa\Uuid\Uuid;
 
@@ -41,6 +42,8 @@ class DBALEventStore implements EventStoreInterface, EventStoreManagementInterfa
     private $metadataSerializer;
 
     private $loadStatement = null;
+
+    private $loadLastStatement = null;
 
     private $tableName;
 
@@ -72,10 +75,42 @@ class DBALEventStore implements EventStoreInterface, EventStoreManagementInterfa
     /**
      * {@inheritDoc}
      */
-    public function load($id)
+    public function load($id, $playhead = 0)
     {
         $statement = $this->prepareLoadStatement();
-        $statement->bindValue(1, $this->convertIdentifierToStorageValue($id));
+
+        $statement->bindValue('uuid', $this->convertIdentifierToStorageValue($id));
+        $statement->bindValue('playhead', $playhead);
+        $statement->execute();
+
+        $events = $this->executeStatement($statement);
+
+        if (empty($events)) {
+            throw new EventStreamNotFoundException(sprintf('EventStream not found for aggregate with id %s', $id));
+        }
+
+        return new DomainEventStream($events);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function loadLast($id)
+    {
+        $statement = $this->prepareLoadLastStatement();
+        $statement->bindValue('uuid', $this->convertIdentifierToStorageValue($id));
+
+        $events = $this->executeStatement($statement);
+
+        if (empty($events)) {
+            return null;
+        }
+
+        return $events[0];
+    }
+
+    private function executeStatement(Statement $statement)
+    {
         $statement->execute();
 
         $events = array();
@@ -83,11 +118,7 @@ class DBALEventStore implements EventStoreInterface, EventStoreManagementInterfa
             $events[] = $this->deserializeEvent($row);
         }
 
-        if (empty($events)) {
-            throw new EventStreamNotFoundException(sprintf('EventStream not found for aggregate with id %s', $id));
-        }
-
-        return new DomainEventStream($events);
+        return $events;
     }
 
     /**
@@ -183,12 +214,27 @@ class DBALEventStore implements EventStoreInterface, EventStoreManagementInterfa
         if (null === $this->loadStatement) {
             $query = 'SELECT uuid, playhead, metadata, payload, recorded_on
                 FROM ' . $this->tableName . '
-                WHERE uuid = ?
+                WHERE uuid = :uuid
+                AND playhead >= :playhead
                 ORDER BY playhead ASC';
             $this->loadStatement = $this->connection->prepare($query);
         }
 
         return $this->loadStatement;
+    }
+
+    private function prepareLoadLastStatement()
+    {
+        if (null === $this->loadLastStatement) {
+            $query = 'SELECT uuid, playhead, metadata, payload, recorded_on
+                FROM ' . $this->tableName . '
+                WHERE uuid = :uuid
+                ORDER BY playhead DESC
+                LIMIT 1';
+            $this->loadLastStatement = $this->connection->prepare($query);
+        }
+
+        return $this->loadLastStatement;
     }
 
     private function deserializeEvent($row)
