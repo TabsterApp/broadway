@@ -35,7 +35,7 @@ abstract class AbstractSchemaEventStoreCommand extends DoctrineCommand
     protected function configure()
     {
         $this
-            ->addArgument('eventStore', 'e', InputOption::VALUE_OPTIONAL, 'Specifies which event store to create')
+            ->addOption('eventStore', 'e', InputOption::VALUE_OPTIONAL, 'Specifies which event store to create')
             ->addOption(
                 'connection',
                 'c',
