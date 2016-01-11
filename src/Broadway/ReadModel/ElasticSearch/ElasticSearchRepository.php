@@ -50,7 +50,7 @@ class ElasticSearchRepository implements RepositoryInterface
     /**
      * {@inheritDoc}
      */
-    public function save(ReadModelInterface $data)
+    public function save(ReadModelInterface $data, $version = null)
     {
         $serializedReadModel = $this->serializer->serialize($data);
 
@@ -61,6 +61,10 @@ class ElasticSearchRepository implements RepositoryInterface
             'body'    => $serializedReadModel['payload'],
             'refresh' => true,
         );
+
+        if($version !== null){
+            $params['version'] = $version;
+        }
 
         $this->client->index($params);
     }
@@ -73,7 +77,7 @@ class ElasticSearchRepository implements RepositoryInterface
         $params = array(
             'index' => $this->index,
             'type'  => $this->class,
-            'id'    => $id,
+            'id'    => $id
         );
 
         try {
@@ -168,6 +172,7 @@ class ElasticSearchRepository implements RepositoryInterface
                     'query' => $query,
                 ),
                 'size'  => 500,
+                "version" => true,
             )
         );
     }
@@ -193,6 +198,10 @@ class ElasticSearchRepository implements RepositoryInterface
 
     private function deserializeHit(array $hit)
     {
+        if(array_key_exists('_version', $hit)){
+            $hit['_source']['_version'] = $hit['_version'];
+        }
+
         return $this->serializer->deserialize(
             array(
                 'class'   => $hit['_type'],
