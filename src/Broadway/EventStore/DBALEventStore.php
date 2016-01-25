@@ -23,7 +23,7 @@ use Broadway\Serializer\SerializerInterface;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Schema\Schema;
-use Doctrine\DBAL\Statement;
+use Facile\DoctrineMySQLComeBack\Doctrine\DBAL\Statement;
 use Doctrine\DBAL\Version;
 use Rhumsaa\Uuid\Uuid;
 
