@@ -34,6 +34,6 @@ class ElasticSearchRepositoryFactory implements RepositoryFactoryInterface
      */
     public function create($name, $class, array $notAnalyzedFields = array())
     {
-        return new ElasticSearchRepository($this->client, $this->serializer, $name, $class, $notAnalyzedFields);
+        return new AdvancedElasticSearchRepository($this->client, $this->serializer, $name, $class, $notAnalyzedFields);
     }
 }
