@@ -7,6 +7,7 @@
 namespace Broadway\ReadModel\ElasticSearch;
 
 
+use Broadway\ReadModel\ReadModelInterface;
 use Broadway\Serializer\SerializerInterface;
 use Elasticsearch\Client;
 use Elasticsearch\Common\Exceptions\Missing404Exception;
@@ -18,6 +19,9 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
     private $index;
     private $class;
     private $notAnalyzedFields;
+
+    private $models = [];
+    private $versions = [];
 
     /**
      * @param string $index
@@ -42,6 +46,65 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
 
     /**
      * {@inheritDoc}
+     */
+    public function save(ReadModelInterface $data)
+    {
+        $this->models[$data->getId()] = $data;
+        $this->flush();
+    }
+
+    public function flush()
+    {
+        foreach ($this->models as $model) {
+            $serializedReadModel = $this->serializer->serialize($model);
+
+            $version = isset($this->versions[$model->getId()]) ? $this->versions[$model->getId()] : 0;
+
+            $params = [
+                'index' => $this->index,
+                'type' => $serializedReadModel['class'],
+                'id' => $model->getId(),
+                'refresh' => true,
+                'body' => $serializedReadModel['payload'],
+                'version' => $version
+            ];
+
+            $this->client->index($params);
+
+            $this->versions[$model->getId()] = $version + 1;
+        }
+    }
+
+    /**
+     * @param string $id
+     * @return mixed|null
+     */
+    public function find($id)
+    {
+        if (isset($this->models[$id])) {
+            return $this->models[$id];
+        }
+
+        $params = array(
+            'index' => $this->index,
+            'type' => $this->class,
+            'id' => $id,
+        );
+
+        try {
+            $result = $this->client->get($params);
+        } catch (Missing404Exception $e) {
+            return null;
+        }
+
+        return $this->deserializeHit($result);
+    }
+
+    /**
+     * Don't use memory for find by because we cannot be sure it contains all of the possible results
+     *
+     * @param array $fields
+     * @return array
      */
     public function findBy(array $fields)
     {
@@ -97,13 +160,13 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
             $scrollId = $docs['_scroll_id'];
 
             $hits = $docs['hits']['hits'];
-            while(\true){
+            while (\true) {
                 $response = $this->client->scroll(['scroll_id' => $scrollId, 'scroll' => '10s']);
 
-                if(count($response['hits']['hits']) > 0){
+                if (count($response['hits']['hits']) > 0) {
                     $hits = array_merge($hits, $response['hits']['hits']);
                     $scrollId = $response['_scroll_id'];
-                }else{
+                } else {
                     break;
                 }
             }
@@ -135,7 +198,7 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
     private function deserializeHit(array $hit)
     {
         if (array_key_exists('_version', $hit)) {
-            $hit['_source']['_version'] = $hit['_version'];
+            $this->versions[$hit['_id']] = $hit['_version'];
         }
 
         return $this->serializer->deserialize(
