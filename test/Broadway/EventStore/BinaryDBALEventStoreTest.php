@@ -23,7 +23,7 @@ use Rhumsaa\Uuid\Uuid;
  */
 class BinaryDBALEventStoreTest extends DBALEventStoreTest
 {
-    /** @var \Doctrine\DBAL\Schema\Table  */
+    /** @var \Doctrine\DBAL\Schema\Table */
     protected $table;
 
     public function setUp()
@@ -32,10 +32,26 @@ class BinaryDBALEventStoreTest extends DBALEventStoreTest
             $this->markTestSkipped('Binary type is only available for Doctrine >= v2.5');
         }
 
-        $connection       = DriverManager::getConnection(array('driver' => 'pdo_sqlite', 'memory' => true));
-        $schemaManager    = $connection->getSchemaManager();
-        $schema           = $schemaManager->createSchema();
-        $this->eventStore = new DBALEventStore($connection, new SimpleInterfaceSerializer(), new SimpleInterfaceSerializer(), 'events', true);
+        $connection = DriverManager::getConnection(
+            array(
+                'driver' => 'pdo_sqlite',
+                'memory' => true,
+                'wrapperClass' => 'Facile\DoctrineMySQLComeBack\Doctrine\DBAL\Connection',
+                'driverOptions' => array(
+                    'x_reconnect_attempts' => 3
+                )
+            )
+        );
+
+        $schemaManager = $connection->getSchemaManager();
+        $schema = $schemaManager->createSchema();
+        $this->eventStore = new DBALEventStore(
+            $connection,
+            new SimpleInterfaceSerializer(),
+            new SimpleInterfaceSerializer(),
+            'events',
+            true
+        );
 
         $this->table = $this->eventStore->configureSchema($schema);
 
@@ -61,10 +77,12 @@ class BinaryDBALEventStoreTest extends DBALEventStoreTest
      */
     public function it_throws_an_exception_when_an_id_is_no_uuid_in_binary_mode()
     {
-        $id                = 'bleeh';
-        $domainEventStream = new DomainEventStream(array(
-            $this->createDomainMessage($id, 0),
-        ));
+        $id = 'bleeh';
+        $domainEventStream = new DomainEventStream(
+            array(
+                $this->createDomainMessage($id, 0),
+            )
+        );
 
         $this->eventStore->append($id, $domainEventStream);
     }

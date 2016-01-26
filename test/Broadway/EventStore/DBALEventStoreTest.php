@@ -21,10 +21,25 @@ class DBALEventStoreTest extends EventStoreTest
 {
     public function setUp()
     {
-        $connection       = DriverManager::getConnection(array('driver' => 'pdo_sqlite', 'memory' => true));
-        $schemaManager    = $connection->getSchemaManager();
-        $schema           = $schemaManager->createSchema();
-        $this->eventStore = new DBALEventStore($connection, new SimpleInterfaceSerializer(), new SimpleInterfaceSerializer(), 'events');
+        $connection = DriverManager::getConnection(
+            array(
+                'driver' => 'pdo_sqlite',
+                'memory' => true,
+                'wrapperClass' => 'Facile\DoctrineMySQLComeBack\Doctrine\DBAL\Connection',
+                'driverOptions' => array(
+                    'x_reconnect_attempts' => 3
+                )
+            )
+        );
+
+        $schemaManager = $connection->getSchemaManager();
+        $schema = $schemaManager->createSchema();
+        $this->eventStore = new DBALEventStore(
+            $connection,
+            new SimpleInterfaceSerializer(),
+            new SimpleInterfaceSerializer(),
+            'events'
+        );
 
         $table = $this->eventStore->configureSchema($schema);
         $schemaManager->createTable($table);
