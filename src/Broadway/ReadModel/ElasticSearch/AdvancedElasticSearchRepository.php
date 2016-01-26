@@ -47,10 +47,13 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
     /**
      * {@inheritDoc}
      */
-    public function save(ReadModelInterface $data)
+    public function save(ReadModelInterface $data, $flush = true)
     {
         $this->models[$data->getId()] = $data;
-        $this->flush();
+
+        if ($flush) {
+            $this->flush();
+        }
     }
 
     public function flush()
@@ -73,6 +76,9 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
 
             $this->versions[$model->getId()] = $version + 1;
         }
+
+        $this->models = [];
+        $this->versions = [];
     }
 
     /**
@@ -101,8 +107,6 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
     }
 
     /**
-     * Don't use memory for find by because we cannot be sure it contains all of the possible results
-     *
      * @param array $fields
      * @return array
      */
@@ -197,6 +201,10 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
      */
     private function deserializeHit(array $hit)
     {
+        if(array_key_exists($hit['_id'], $this->models)){//Model already exists in memory
+            return $this->models[$hit['_id']];
+        }
+
         if (array_key_exists('_version', $hit)) {
             $this->versions[$hit['_id']] = $hit['_version'];
         }
