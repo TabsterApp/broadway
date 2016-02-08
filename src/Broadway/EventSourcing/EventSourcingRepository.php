@@ -34,10 +34,10 @@ class EventSourcingRepository implements RepositoryInterface
     private $aggregateFactory;
 
     /**
-     * @param EventStoreInterface             $eventStore
-     * @param EventBusInterface               $eventBus
-     * @param string                          $aggregateClass
-     * @param AggregateFactoryInterface       $aggregateFactory
+     * @param EventStoreInterface $eventStore
+     * @param EventBusInterface $eventBus
+     * @param string $aggregateClass
+     * @param AggregateFactoryInterface $aggregateFactory
      * @param EventStreamDecoratorInterface[] $eventStreamDecorators
      */
     public function __construct(
@@ -50,11 +50,11 @@ class EventSourcingRepository implements RepositoryInterface
     ) {
         $this->assertExtendsEventSourcedAggregateRoot($aggregateClass);
 
-        $this->eventStore            = $eventStore;
-        $this->snapshotStore         = $snapshotStore;
-        $this->eventBus              = $eventBus;
-        $this->aggregateClass        = $aggregateClass;
-        $this->aggregateFactory      = $aggregateFactory;
+        $this->eventStore = $eventStore;
+        $this->snapshotStore = $snapshotStore;
+        $this->eventBus = $eventBus;
+        $this->aggregateClass = $aggregateClass;
+        $this->aggregateFactory = $aggregateFactory;
         $this->eventStreamDecorators = $eventStreamDecorators;
     }
 
@@ -76,6 +76,10 @@ class EventSourcingRepository implements RepositoryInterface
 
             return $this->aggregateFactory->create($this->aggregateClass, $domainEventStream, $snapshot);
         } catch (EventStreamNotFoundException $e) {
+            if ($snapshot) {
+                return $this->aggregateFactory->create($this->aggregateClass, new DomainEventStream([]), $snapshot);
+            }
+
             throw AggregateNotFoundException::create($id, $e);
         }
     }
@@ -89,14 +93,14 @@ class EventSourcingRepository implements RepositoryInterface
         Assert::isInstanceOf($aggregate, $this->aggregateClass);
 
         $domainEventStream = $aggregate->getUncommittedEvents();
-        $eventStream       = $this->decorateForWrite($aggregate, $domainEventStream);
+        $eventStream = $this->decorateForWrite($aggregate, $domainEventStream);
         $this->eventStore->append($aggregate->getAggregateRootId(), $eventStream);
         $this->eventBus->publish($eventStream);
     }
 
     private function decorateForWrite(AggregateRoot $aggregate, DomainEventStream $eventStream)
     {
-        $aggregateType       = $this->getType();
+        $aggregateType = $this->getType();
         $aggregateIdentifier = $aggregate->getAggregateRootId();
 
         foreach ($this->eventStreamDecorators as $eventStreamDecorator) {
