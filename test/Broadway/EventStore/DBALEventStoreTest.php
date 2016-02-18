@@ -21,6 +21,8 @@ class DBALEventStoreTest extends EventStoreTest
 {
     public function setUp()
     {
+        parent::setUp();
+
         $connection = DriverManager::getConnection(
             array(
                 'driver' => 'pdo_sqlite',

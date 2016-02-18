@@ -12,7 +12,9 @@
 namespace Broadway\EventStore\Management;
 
 use Broadway\EventStore\DBALEventStore;
+use Broadway\EventStore\TestUpcaster;
 use Broadway\Serializer\SimpleInterfaceSerializer;
+use Broadway\Upcasting\SequentialUpcasterChain;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Version;
 
@@ -21,7 +23,7 @@ use Doctrine\DBAL\Version;
  */
 class BinaryDBALEventStoreManagementTest extends DBALEventStoreManagementTest
 {
-    /** @var \Doctrine\DBAL\Schema\Table  */
+    /** @var \Doctrine\DBAL\Schema\Table */
     protected $table;
 
     public function createEventStore()
@@ -30,10 +32,17 @@ class BinaryDBALEventStoreManagementTest extends DBALEventStoreManagementTest
             $this->markTestSkipped('Binary type is only available for Doctrine >= v2.5');
         }
 
-        $connection       = DriverManager::getConnection(array('driver' => 'pdo_sqlite', 'memory' => true));
-        $schemaManager    = $connection->getSchemaManager();
-        $schema           = $schemaManager->createSchema();
-        $eventStore = new DBALEventStore($connection, new SimpleInterfaceSerializer(), new SimpleInterfaceSerializer(), 'events', true);
+        $connection = DriverManager::getConnection(array('driver' => 'pdo_sqlite', 'memory' => true));
+        $schemaManager = $connection->getSchemaManager();
+        $schema = $schemaManager->createSchema();
+        $eventStore = new DBALEventStore(
+            $connection,
+            new SimpleInterfaceSerializer(),
+            new SimpleInterfaceSerializer(),
+            'events',
+            new SequentialUpcasterChain([new TestUpcaster()]),
+            true
+        );
 
         $this->table = $eventStore->configureSchema($schema);
 

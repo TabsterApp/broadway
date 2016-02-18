@@ -12,11 +12,16 @@
 namespace Broadway\EventStore\Management;
 
 use Broadway\EventStore\InMemoryEventStore;
+use Broadway\EventStore\TestUpcaster;
+use Broadway\Serializer\SimpleInterfaceSerializer;
+use Broadway\Upcasting\SequentialUpcasterChain;
 
 class InMemoryEventStoreManagementTest extends EventStoreManagementTest
 {
     public function createEventStore()
     {
-        return new InMemoryEventStore();
+        return new InMemoryEventStore(
+            new SimpleInterfaceSerializer(), new SequentialUpcasterChain([new TestUpcaster()])
+        );
     }
 }

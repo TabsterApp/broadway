@@ -57,15 +57,7 @@ class InMemoryEventStore implements EventStoreInterface, EventStoreManagementInt
 
             foreach ($this->events[$id] as $ph => $event) {
                 if ($playhead <= $ph) {
-                    $payload = $this->upcasterChain->upcast($event['payload']);
-
-                    $events[] = new DomainMessage(
-                        $id,
-                        $ph,
-                        $event['metadata'],
-                        $this->serializer->deserialize($payload),
-                        $event['recorded_on']
-                    );
+                    $events[] = $this->arrayEventToDomainMessage($id, $ph, $event);
                 }
             }
 
@@ -83,10 +75,29 @@ class InMemoryEventStore implements EventStoreInterface, EventStoreManagementInt
         $id = (string)$id;
 
         if (isset($this->events[$id])) {
-            return end($this->events[$id]);
+            $event = end($this->events[$id]);
+
+            return $this->arrayEventToDomainMessage($id, key($this->events[$id]), $event);
         }
 
         return null;
+    }
+
+    /**
+     * @param $id
+     * @param $playhead
+     * @param $event
+     * @return DomainMessage
+     */
+    protected function arrayEventToDomainMessage($id, $playhead, $event)
+    {
+        return new DomainMessage(
+            $id,
+            $playhead,
+            $event['metadata'],
+            $this->serializer->deserialize($this->upcasterChain->upcast($event['payload'])),
+            $event['recorded_on']
+        );
     }
 
     /**
@@ -124,12 +135,20 @@ class InMemoryEventStore implements EventStoreInterface, EventStoreManagementInt
     public function visitEvents(Criteria $criteria, EventVisitorInterface $eventVisitor)
     {
         foreach ($this->events as $id => $events) {
-            foreach ($events as $event) {
-                if (!$criteria->isMatchedBy($event)) {
+            foreach ($events as $ph => $event) {
+                $domainEvent = $this->arrayEventToDomainMessage($id, $ph, $event);
+
+                if (!$criteria->isMatchedBy($domainEvent)) {
                     continue;
                 }
 
-                $eventVisitor->doWithEvent($event);
+                $eventVisitor->doWithEvent($domainEvent);
+
+                $this->events[$id][$ph] = [
+                    'metadata' => $domainEvent->getMetadata(),
+                    'payload' => $this->serializer->serialize($domainEvent->getPayload()),
+                    'recorded_on' => $domainEvent->getRecordedOn(),
+                ];
             }
         }
     }

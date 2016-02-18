@@ -50,13 +50,17 @@ abstract class AbstractEventSourcingRepositoryTest extends TestCase
 
     public function setUp()
     {
-        $this->eventStore = new TraceableEventStore(new InMemoryEventStore(
-            new SimpleInterfaceSerializer(),
-            new SequentialUpcasterChain(array())
-        ));
+        $this->eventStore = new TraceableEventStore(
+            new InMemoryEventStore(
+                new SimpleInterfaceSerializer(),
+                new SequentialUpcasterChain(array())
+            )
+        );
         $this->eventStore->trace();
 
-        $this->snapshotStore = new TraceableEventStore(new InMemoryEventStore());
+        $this->snapshotStore = new TraceableEventStore(
+            new InMemoryEventStore(new SimpleInterfaceSerializer(), new SequentialUpcasterChain(array()))
+        );
         $this->snapshotStore->trace();
 
         $this->eventBus = new TraceableEventBus(new SimpleEventBus());
@@ -65,7 +69,12 @@ abstract class AbstractEventSourcingRepositoryTest extends TestCase
         $this->eventStreamDecorator = new TraceableEventStoreDecorator();
         $this->eventStreamDecorator->trace();
 
-        $this->repository = $this->createEventSourcingRepository($this->eventStore, $this->eventBus, array($this->eventStreamDecorator), $this->snapshotStore);
+        $this->repository = $this->createEventSourcingRepository(
+            $this->eventStore,
+            $this->eventBus,
+            array($this->eventStreamDecorator),
+            $this->snapshotStore
+        );
     }
 
     /**
@@ -107,9 +116,14 @@ abstract class AbstractEventSourcingRepositoryTest extends TestCase
      */
     public function it_loads_an_aggregate()
     {
-        $this->eventStore->append(42, new DomainEventStream(array(
-            DomainMessage::recordNow(42, 0, new Metadata(array()), new DidNumberEvent(1337))
-        )));
+        $this->eventStore->append(
+            42,
+            new DomainEventStream(
+                array(
+                    DomainMessage::recordNow(42, 0, new Metadata(array()), new DidNumberEvent(1337))
+                )
+            )
+        );
 
         $aggregate = $this->repository->load(42);
 
@@ -125,17 +139,37 @@ abstract class AbstractEventSourcingRepositoryTest extends TestCase
      */
     public function it_loads_an_aggregate_using_snapshots()
     {
-        $this->eventStore->append(42, new DomainEventStream(array(
-            DomainMessage::recordNow(42, 1, new Metadata(array()), new DidNumberEvent(1337))
-        )));
+        $this->eventStore->append(
+            42,
+            new DomainEventStream(
+                array(
+                    DomainMessage::recordNow(42, 1, new Metadata(array()), new DidNumberEvent(1337))
+                )
+            )
+        );
 
-        $this->snapshotStore->append(42, new DomainEventStream(array(
-            DomainMessage::recordNow(42, 1, new Metadata(array()), new TestEventSourcedAggregateSnapshot(array(1337, 1337)))
-        )));
+        $this->snapshotStore->append(
+            42,
+            new DomainEventStream(
+                array(
+                    DomainMessage::recordNow(
+                        42,
+                        1,
+                        new Metadata(array()),
+                        new TestEventSourcedAggregateSnapshot(array(1337, 1337))
+                    )
+                )
+            )
+        );
 
-        $this->eventStore->append(42, new DomainEventStream(array(
-            DomainMessage::recordNow(42, 2, new Metadata(array()), new DidNumberEvent(2001))
-        )));
+        $this->eventStore->append(
+            42,
+            new DomainEventStream(
+                array(
+                    DomainMessage::recordNow(42, 2, new Metadata(array()), new DidNumberEvent(2001))
+                )
+            )
+        );
 
         $aggregate = $this->repository->load(42);
 
@@ -185,7 +219,7 @@ abstract class AbstractEventSourcingRepositoryTest extends TestCase
         $lastCall = $this->eventStreamDecorator->getLastCall();
 
         $this->assertEquals($aggregate->getAggregateRootId(), $lastCall['aggregateIdentifier']);
-        $this->assertEquals('\\' . get_class($aggregate), $lastCall['aggregateType']);
+        $this->assertEquals('\\'.get_class($aggregate), $lastCall['aggregateType']);
 
         $events = iterator_to_array($lastCall['eventStream']);
         $this->assertCount(1, $events);
@@ -214,7 +248,7 @@ abstract class AbstractEventSourcingRepositoryTest extends TestCase
         $repository->save($aggregate);
 
         $metadata = $projector->getMetadata();
-        $data     = $metadata->serialize();
+        $data = $metadata->serialize();
 
         $this->assertArrayHasKey('decoration_test', $data);
         $this->assertEquals('I am a decorated test', $data['decoration_test']);
@@ -223,7 +257,12 @@ abstract class AbstractEventSourcingRepositoryTest extends TestCase
     /**
      * @return EventSourcingRepository
      */
-    abstract protected function createEventSourcingRepository(TraceableEventStore $eventStore, TraceableEventBus $eventBus, array $eventStreamDecorators, TraceableEventStore $snapshotStore);
+    abstract protected function createEventSourcingRepository(
+        TraceableEventStore $eventStore,
+        TraceableEventBus $eventBus,
+        array $eventStreamDecorators,
+        TraceableEventStore $snapshotStore
+    );
 
     /**
      * @return EventSourcedAggregateRoot
@@ -253,13 +292,25 @@ class DidNumberEvent implements SerializableInterface
     }
 }
 
-class TestEventSourcedAggregateSnapshot
+class TestEventSourcedAggregateSnapshot //implements SerializableInterface
 {
     public $numbers;
 
     public function __construct(array $numbers)
     {
         $this->numbers = $numbers;
+    }
+
+    public static function deserialize(array $data)
+    {
+        return new TestEventSourcedAggregateSnapshot($data['numbers']);
+    }
+
+    public function serialize()
+    {
+        return array(
+            'numbers' => $this->numbers
+        );
     }
 }
 
@@ -291,7 +342,11 @@ class TraceableEventstoreDecorator implements EventStreamDecoratorInterface
     public function decorateForWrite($aggregateType, $aggregateIdentifier, DomainEventStreamInterface $eventStream)
     {
         if ($this->tracing) {
-            $this->calls[] = array('aggregateType' => $aggregateType, 'aggregateIdentifier' => $aggregateIdentifier, 'eventStream' => $eventStream);
+            $this->calls[] = array(
+                'aggregateType' => $aggregateType,
+                'aggregateIdentifier' => $aggregateIdentifier,
+                'eventStream' => $eventStream
+            );
         }
 
         return $eventStream;
@@ -309,7 +364,7 @@ class TraceableEventstoreDecorator implements EventStreamDecoratorInterface
 
     public function getLastCall()
     {
-        if (! $this->isCalled()) {
+        if (!$this->isCalled()) {
             throw new RuntimeException('was never called');
         }
 
