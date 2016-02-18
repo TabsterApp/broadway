@@ -50,25 +50,23 @@ class InMemoryEventStore implements EventStoreInterface, EventStoreManagementInt
      */
     public function load($id, $playhead = 0)
     {
-        $id = (string) $id;
+        $id = (string)$id;
 
         if (isset($this->events[$id])) {
             $events = [];
 
-            foreach ($this->events[$id] as $playhead => $event) {
-                if($playhead <= $event->getPlayhead()){
+            foreach ($this->events[$id] as $ph => $event) {
+                if ($playhead <= $ph) {
                     $payload = $this->upcasterChain->upcast($event['payload']);
 
                     $events[] = new DomainMessage(
                         $id,
-                        $playhead,
+                        $ph,
                         $event['metadata'],
                         $this->serializer->deserialize($payload),
                         $event['recorded_on']
                     );
                 }
-
-
             }
 
             return new DomainEventStream($events);
@@ -82,7 +80,7 @@ class InMemoryEventStore implements EventStoreInterface, EventStoreManagementInt
      */
     public function loadLast($id)
     {
-        $id = (string) $id;
+        $id = (string)$id;
 
         if (isset($this->events[$id])) {
             return end($this->events[$id]);
@@ -96,9 +94,9 @@ class InMemoryEventStore implements EventStoreInterface, EventStoreManagementInt
      */
     public function append($id, DomainEventStreamInterface $eventStream)
     {
-        $id = (string) $id;
+        $id = (string)$id;
 
-        if (! isset($this->events[$id])) {
+        if (!isset($this->events[$id])) {
             $this->events[$id] = array();
         }
 
@@ -107,8 +105,8 @@ class InMemoryEventStore implements EventStoreInterface, EventStoreManagementInt
             $this->assertPlayhead($this->events[$id], $playhead);
 
             $this->events[$id][$playhead] = array(
-                'metadata'    => $domainMessage->getMetadata(),
-                'payload'     => $this->serializer->serialize($domainMessage->getPayload()),
+                'metadata' => $domainMessage->getMetadata(),
+                'payload' => $this->serializer->serialize($domainMessage->getPayload()),
                 'recorded_on' => $domainMessage->getRecordedOn(),
             );
         }
@@ -127,7 +125,7 @@ class InMemoryEventStore implements EventStoreInterface, EventStoreManagementInt
     {
         foreach ($this->events as $id => $events) {
             foreach ($events as $event) {
-                if (! $criteria->isMatchedBy($event)) {
+                if (!$criteria->isMatchedBy($event)) {
                     continue;
                 }
 
