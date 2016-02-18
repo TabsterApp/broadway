@@ -28,6 +28,8 @@ class BinaryDBALEventStoreTest extends DBALEventStoreTest
 
     public function setUp()
     {
+        parent::setUp();
+
         if (Version::compare('2.5.0') >= 0) {
             $this->markTestSkipped('Binary type is only available for Doctrine >= v2.5');
         }
@@ -45,11 +47,13 @@ class BinaryDBALEventStoreTest extends DBALEventStoreTest
 
         $schemaManager = $connection->getSchemaManager();
         $schema = $schemaManager->createSchema();
+
         $this->eventStore = new DBALEventStore(
             $connection,
             new SimpleInterfaceSerializer(),
             new SimpleInterfaceSerializer(),
             'events',
+            $this->upcasterChain,
             true
         );
 

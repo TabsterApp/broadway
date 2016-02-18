@@ -34,11 +34,13 @@ class DBALEventStoreTest extends EventStoreTest
 
         $schemaManager = $connection->getSchemaManager();
         $schema = $schemaManager->createSchema();
+
         $this->eventStore = new DBALEventStore(
             $connection,
             new SimpleInterfaceSerializer(),
             new SimpleInterfaceSerializer(),
-            'events'
+            'events',
+            $this->upcasterChain
         );
 
         $table = $this->eventStore->configureSchema($schema);

@@ -23,7 +23,7 @@ interface EventStoreInterface
      * @param mixed $id
      * @param int $playhead
      *
-     * @return DomainEventStreamInterface
+     * @return DomainEventStreamInterface|DomainMessage[]
      */
     public function load($id, $playhead);
 
@@ -35,8 +35,8 @@ interface EventStoreInterface
     public function loadLast($id);
 
     /**
-     * @param mixed                      $id
-     * @param DomainEventStreamInterface $eventStream
+     * @param mixed                                      $id
+     * @param DomainEventStreamInterface|DomainMessage[] $eventStream
      */
     public function append($id, DomainEventStreamInterface $eventStream);
 }
