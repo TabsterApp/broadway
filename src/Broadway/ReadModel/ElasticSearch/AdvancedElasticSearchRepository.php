@@ -10,6 +10,7 @@ namespace Broadway\ReadModel\ElasticSearch;
 use Broadway\ReadModel\ReadModelInterface;
 use Broadway\Serializer\SerializerInterface;
 use Elasticsearch\Client;
+use Elasticsearch\Common\Exceptions\Conflict409Exception;
 use Elasticsearch\Common\Exceptions\Missing404Exception;
 
 class AdvancedElasticSearchRepository extends ElasticSearchRepository
@@ -45,7 +46,9 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
     }
 
     /**
-     * {@inheritDoc}
+     * @param ReadModelInterface $data
+     * @param bool $flush
+     * @throws Conflict409Exception
      */
     public function save(ReadModelInterface $data, $flush = true)
     {
@@ -136,7 +139,11 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
         $retval = array();
 
         foreach ($filter as $field => $value) {
-            $retval[] = array('term' => array($field => $value));
+            if(is_array($value)){
+                $retval[] = array('terms' => array($field => $value));
+            }else{
+                $retval[] = array('term' => array($field => $value));
+            }
         }
 
         return array('and' => $retval);
