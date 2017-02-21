@@ -37,12 +37,12 @@
     ],
     "require-dev": {
         "doctrine/dbal": "~2.4",
-        "doctrine/mongodb": "~1.0",
         "elasticsearch/elasticsearch": "~1.0",
         "instaclick/base-test-bundle": "~0.5",
         "monolog/monolog": "~1.8",
         "symfony/console": "~2.4",
-        "symfony/proxy-manager-bridge": "~2.4"
+        "symfony/proxy-manager-bridge": "~2.4",
+        "php-amqplib/rabbitmq-bundle": "~1.6"
     },
     "suggest": {
         "doctrine/dbal": "For the BroadwayBundle (to persist events)",
