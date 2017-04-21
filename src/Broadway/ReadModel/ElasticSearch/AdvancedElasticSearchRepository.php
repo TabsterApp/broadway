@@ -64,20 +64,24 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
         foreach ($this->models as $model) {
             $serializedReadModel = $this->serializer->serialize($model);
 
-            $version = isset($this->versions[$model->getId()]) ? $this->versions[$model->getId()] : 0;
-
             $params = [
                 'index' => $this->index,
                 'type' => $serializedReadModel['class'],
                 'id' => $model->getId(),
                 'refresh' => true,
                 'body' => $serializedReadModel['payload'],
-                'version' => $version
             ];
+
+            if (isset($this->versions[$model->getId()])) {
+                $params['version'] = $this->versions[$model->getId()];
+            } else {
+                $this->versions[$model->getId()] = 0;
+            }
+
 
             $this->client->index($params);
 
-            $this->versions[$model->getId()] = $version + 1;
+            $this->versions[$model->getId()] += 1;
         }
 
         $this->models = [];
@@ -125,12 +129,12 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
     private function buildFindByQuery(array $fields)
     {
         return array(
-            'filtered' => array(
-                'query' => array(
-                    'match_all' => array(),
+            'bool' => array(
+                'must' => array(
+                    'match_all' => (object)array(),
                 ),
-                'filter' => $this->buildFilter($fields)
-            )
+                'filter' => $this->buildFilter($fields),
+            ),
         );
     }
 
@@ -139,14 +143,14 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
         $retval = array();
 
         foreach ($filter as $field => $value) {
-            if(is_array($value)){
+            if (is_array($value)) {
                 $retval[] = array('terms' => array($field => $value));
-            }else{
+            } else {
                 $retval[] = array('term' => array($field => $value));
             }
         }
 
-        return array('and' => $retval);
+        return array($retval);
     }
 
     protected function query(array $query)
@@ -208,7 +212,7 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
      */
     private function deserializeHit(array $hit)
     {
-        if(array_key_exists($hit['_id'], $this->models)){//Model already exists in memory
+        if (array_key_exists($hit['_id'], $this->models)) {//Model already exists in memory
             return $this->models[$hit['_id']];
         }
 

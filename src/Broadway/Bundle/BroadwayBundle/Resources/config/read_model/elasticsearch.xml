@@ -5,7 +5,8 @@
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
 
     <services>
-        <service id="broadway.elasticsearch.client" class="Elasticsearch\Client">
+        <service id="broadway.elasticsearch.client" class="Tabster\Core\ElasticsearchBundle\Client">
+            <factory class="Tabster\Core\ElasticsearchBundle\Client" method="createClient" />
             <argument>%elasticsearch%</argument>
         </service>
 

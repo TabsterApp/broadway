@@ -41,6 +41,9 @@ abstract class AbstractEventSourcingRepositoryTest extends TestCase
 
     /** @var EventSourcingRepository */
     protected $repository;
+    
+    /** @var  EventSourcingRepository */
+    protected $snapshotStore;
 
     public function setUp()
     {
