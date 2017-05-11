@@ -231,4 +231,14 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
         );
     }
 
+    /**
+     * @return bool
+     */
+    public function indexExists()
+    {
+        $indexParams = ['index' => $this->index];
+
+        return $this->client->indices()->exists($indexParams);
+    }
+
 }
