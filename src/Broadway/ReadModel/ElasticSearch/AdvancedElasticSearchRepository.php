@@ -7,6 +7,7 @@
 namespace Broadway\ReadModel\ElasticSearch;
 
 
+use Assert\Assertion;
 use Broadway\ReadModel\ReadModelInterface;
 use Broadway\Serializer\SerializerInterface;
 use Elasticsearch\Client;
@@ -52,6 +53,8 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
      */
     public function save(ReadModelInterface $data, $flush = true)
     {
+        Assertion::isInstanceOf($data, $this->class);
+
         $this->models[$data->getId()] = $data;
 
         if ($flush) {
