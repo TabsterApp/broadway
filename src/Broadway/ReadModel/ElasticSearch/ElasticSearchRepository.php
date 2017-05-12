@@ -38,11 +38,12 @@ class ElasticSearchRepository implements RepositoryInterface
         SerializerInterface $serializer,
         $index,
         $class,
-        array $notAnalyzedFields = []
+        array $notAnalyzedFields = [],
+        $environment
     ) {
         $this->client = $client;
         $this->serializer = $serializer;
-        $this->index = $index;
+        $this->index = $environment.'_'.$index;
         $this->class = $class;
         $this->notAnalyzedFields = $notAnalyzedFields;
     }

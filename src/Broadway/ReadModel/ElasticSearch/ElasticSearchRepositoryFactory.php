@@ -22,11 +22,13 @@ class ElasticSearchRepositoryFactory implements RepositoryFactoryInterface
 {
     private $client;
     private $serializer;
+    private $environment;
 
-    public function __construct(Client $client, SerializerInterface $serializer)
+    public function __construct(Client $client, SerializerInterface $serializer, $environment)
     {
-        $this->client     = $client;
+        $this->client = $client;
         $this->serializer = $serializer;
+        $this->environment = $environment;
     }
 
     /**
@@ -34,6 +36,13 @@ class ElasticSearchRepositoryFactory implements RepositoryFactoryInterface
      */
     public function create($name, $class, array $notAnalyzedFields = array())
     {
-        return new AdvancedElasticSearchRepository($this->client, $this->serializer, $name, $class, $notAnalyzedFields);
+        return new AdvancedElasticSearchRepository(
+            $this->client,
+            $this->serializer,
+            $name,
+            $class,
+            $notAnalyzedFields,
+            $this->environment
+        );
     }
 }

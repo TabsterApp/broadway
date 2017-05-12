@@ -15,6 +15,7 @@
         <service id="broadway.read_model.elasticsearch.repository_factory" class="Broadway\ReadModel\ElasticSearch\ElasticSearchRepositoryFactory">
             <argument type="service" id="broadway.elasticsearch.client" />
             <argument type="service" id="broadway.serializer.readmodel" />
+            <argument>%kernel.environment%</argument>
         </service>
 
     </services>
