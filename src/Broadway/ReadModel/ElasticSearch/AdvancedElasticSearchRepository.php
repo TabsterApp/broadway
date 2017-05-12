@@ -35,13 +35,14 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
         SerializerInterface $serializer,
         $index,
         $class,
-        array $notAnalyzedFields = array()
+        array $notAnalyzedFields = array(),
+        $environment
     ) {
-        parent::__construct($client, $serializer, $index, $class, $notAnalyzedFields);
+        parent::__construct($client, $serializer, $index, $class, $notAnalyzedFields, $environment);
 
         $this->client = $client;
         $this->serializer = $serializer;
-        $this->index = $index;
+        $this->index = $environment.'_'.$index;
         $this->class = $class;
         $this->notAnalyzedFields = $notAnalyzedFields;
     }
