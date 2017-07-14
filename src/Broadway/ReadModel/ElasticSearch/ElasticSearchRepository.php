@@ -75,6 +75,7 @@ class ElasticSearchRepository implements RepositoryInterface
             'type' => $this->class,
             'id' => $id,
         ];
+
         try {
             $result = $this->client->get($params);
         } catch (Missing404Exception $e) {
