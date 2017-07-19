@@ -63,10 +63,6 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
         }
     }
 
-    /**
-     * Actually persist in memory readmodels to elasticsearch
-     * @throws Conflict409Exception
-     */
     public function flush()
     {
         foreach ($this->models as $model) {
@@ -86,18 +82,14 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
                 $this->versions[$model->getId()] = 0;
             }
 
-            try {
-                $this->client->index($params);
-            } catch (Conflict409Exception $e) {
-                unset($this->versions[$model->getId()]);
-                unset($this->models[$model->getId()]);
 
-                throw $e;// Enable retrying upstream
-            }
-
+            $this->client->index($params);
 
             $this->versions[$model->getId()] += 1;
         }
+
+        $this->models = [];
+        $this->versions = [];
     }
 
     /**
