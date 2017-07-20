@@ -24,6 +24,7 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
 
     private $models = [];
     private $versions = [];
+    private $changed = [];
 
     /**
      * @param string $index
@@ -59,6 +60,7 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
         Assertion::isInstanceOf($data, $this->class);
 
         $this->models[$data->getId()] = $data;
+        $this->changed[$data->getId()] = true;
 
         if ($flush) {
             $this->flush($data);
@@ -104,8 +106,8 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
      */
     public function flushAll()
     {
-        foreach ($this->models as $model) {
-            $this->flush($model);
+        foreach ($this->changed as $modelKey => $value) {
+            $this->flush($this->models[$modelKey]);
         }
     }
 
