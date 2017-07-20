@@ -45,6 +45,8 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
         $this->index = $environment.'_'.$index;
         $this->class = $class;
         $this->notAnalyzedFields = $notAnalyzedFields;
+        $this->models = [];
+        $this->versions = [];
     }
 
     /**
@@ -59,7 +61,7 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
         $this->models[$data->getId()] = $data;
 
         if ($flush) {
-            $this->flush();
+            $this->flush($data);
         }
     }
 
@@ -67,38 +69,53 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
      * Actually persist in memory readmodels to elasticsearch
      * @throws Conflict409Exception
      */
-    public function flush()
+    public function flush(ReadModelInterface $data)
+    {
+        $serializedReadModel = $this->serializer->serialize($data);
+
+        $params = [
+            'index' => $this->index,
+            'type' => $serializedReadModel['class'],
+            'id' => $data->getId(),
+            'body' => $serializedReadModel['payload'],
+            "refresh" => "true"
+        ];
+
+        if (isset($this->versions[$data->getId()])) {
+            $params['version'] = $this->versions[$data->getId()];
+        } else {
+            $this->versions[$data->getId()] = 0;
+        }
+
+        try {
+            $this->client->index($params);
+        } catch (Conflict409Exception $e) {
+            unset($this->versions[$data->getId()]);
+            unset($this->models[$data->getId()]);
+
+            throw $e;// Enable retrying upstream
+        }
+
+        $this->versions[$data->getId()] += 1;
+    }
+
+    public function flushAll()
     {
         foreach ($this->models as $model) {
-            $serializedReadModel = $this->serializer->serialize($model);
-
-            $params = [
-                'index' => $this->index,
-                'type' => $serializedReadModel['class'],
-                'id' => $model->getId(),
-                'refresh' => true,
-                'body' => $serializedReadModel['payload'],
-            ];
-
-            if (isset($this->versions[$model->getId()])) {
-                $params['version'] = $this->versions[$model->getId()];
-            } else {
-                $this->versions[$model->getId()] = 0;
-            }
-
-            try {
-                $this->client->index($params);
-            } catch (Conflict409Exception $e) {
-                unset($this->versions[$model->getId()]);
-                unset($this->models[$model->getId()]);
-
-                throw $e;// Enable retrying upstream
-            }
-
-
-            $this->versions[$model->getId()] += 1;
+            $this->flush($model);
         }
     }
+
+    public function remove($id)
+    {
+        parent::remove($id);
+
+        if (array_key_exists((string)($id), $this->models)) {
+            unset($this->models[(string)$id]);
+            unset($this->versions[(string)$id]);
+        }
+    }
+
 
     /**
      * @param string $id
@@ -106,8 +123,8 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
      */
     public function find($id)
     {
-        if (isset($this->models[$id])) {
-            return $this->models[$id];
+        if (array_key_exists((string)($id), $this->models)) {
+            return $this->models[(string)$id];
         }
 
         $params = array(

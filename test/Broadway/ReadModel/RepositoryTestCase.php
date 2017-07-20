@@ -160,7 +160,7 @@ abstract class RepositoryTestCase extends TestCase
      */
     public function it_removes_a_readmodel()
     {
-        $model = $this->createReadModel('1', 'John', 'Foo', array('foo' => 'bar'));
+        $model = $this->createReadModel('1', 'John', 'Foo');
         $this->repository->save($model);
 
         $this->repository->remove('1');

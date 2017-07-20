@@ -20,13 +20,15 @@ class ElasticSearchRepositoryFactoryTest extends TestCase
      */
     public function it_creates_an_elastic_search_repository()
     {
-        $serializer = $this->getMock('Broadway\Serializer\SerializerInterface');
+        $serializer = $this->getMockBuilder('Broadway\Serializer\SerializerInterface')->getMock();
         $client     = $this->getMockBuilder('\Elasticsearch\Client')
             ->disableOriginalConstructor()
             ->getMock();
 
-        $repository = new AdvancedElasticSearchRepository($client, $serializer, 'test', 'Class');
-        $factory    = new ElasticSearchRepositoryFactory($client, $serializer);
+        $env = 'test';
+
+        $repository = new ElasticSearchRepository($client, $serializer, 'test', 'Class', [], $env);
+        $factory    = new ElasticSearchRepositoryFactory($client, $serializer, $env);
 
         $this->assertEquals($repository, $factory->create('test', 'Class'));
     }
@@ -36,13 +38,15 @@ class ElasticSearchRepositoryFactoryTest extends TestCase
      */
     public function it_creates_an_elastic_search_repository_containing_index_metadata()
     {
-        $serializer = $this->getMock('Broadway\Serializer\SerializerInterface');
+        $serializer = $this->getMockBuilder('Broadway\Serializer\SerializerInterface')->getMock();
         $client     = $this->getMockBuilder('\Elasticsearch\Client')
             ->disableOriginalConstructor()
             ->getMock();
 
-        $repository = new AdvancedElasticSearchRepository($client, $serializer, 'test', 'Class', array('id'));
-        $factory    = new ElasticSearchRepositoryFactory($client, $serializer);
+        $env = 'test';
+
+        $repository = new ElasticSearchRepository($client, $serializer, 'test', 'Class', array('id'), $env);
+        $factory    = new ElasticSearchRepositoryFactory($client, $serializer, $env);
 
         $this->assertEquals($repository, $factory->create('test', 'Class', array('id')));
     }

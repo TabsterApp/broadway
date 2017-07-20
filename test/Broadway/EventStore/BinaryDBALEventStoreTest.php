@@ -33,14 +33,10 @@ class BinaryDBALEventStoreTest extends DBALEventStoreTest
         }
 
         $connection = DriverManager::getConnection(
-            array(
+            [
                 'driver' => 'pdo_sqlite',
                 'memory' => true,
-                'wrapperClass' => 'Facile\DoctrineMySQLComeBack\Doctrine\DBAL\Connection',
-                'driverOptions' => array(
-                    'x_reconnect_attempts' => 3
-                )
-            )
+            ]
         );
 
         $schemaManager = $connection->getSchemaManager();

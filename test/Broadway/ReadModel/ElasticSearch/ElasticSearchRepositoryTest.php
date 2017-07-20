@@ -40,7 +40,7 @@ class ElasticSearchRepositoryTest extends RepositoryTestCase
 
     protected function createElasticSearchRepository(Client $client, SerializerInterface $serializer, $index, $class)
     {
-        return new ElasticSearchRepository($client, $serializer, $index, $class);
+        return new ElasticSearchRepository($client, $serializer, $index, $class, 'test');
     }
 
     /**

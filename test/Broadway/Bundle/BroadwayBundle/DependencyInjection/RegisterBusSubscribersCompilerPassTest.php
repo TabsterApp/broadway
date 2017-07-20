@@ -31,7 +31,7 @@ class RegisterBusSubscribersCompilerPassTest extends TestCase
         $this->builder    = $this->getMockBuilder('Symfony\Component\DependencyInjection\ContainerBuilder')
             ->setMethods(array('getParameterBag', 'getDefinition', 'hasDefinition', 'findDefinition', 'findTaggedServiceIds'))
             ->getMock();
-        $this->commandBus = $this->getMock('Symfony\Component\DependencyInjection\Definition');
+        $this->commandBus = $this->getMockBuilder('Symfony\Component\DependencyInjection\Definition')->getMock();
     }
 
     /**
@@ -78,12 +78,12 @@ class RegisterBusSubscribersCompilerPassTest extends TestCase
      */
     private function expects_class_from_definition_and_returns($taggedServiceClass)
     {
-        $parameterBag = $this->getMock('Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface');
+        $parameterBag = $this->getMockBuilder('Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface')->getMock();
         $this->builder->expects($this->atLeastOnce())
             ->method('getParameterBag')
             ->will($this->returnValue($parameterBag));
 
-        $definition = $this->getMock('Symfony\Component\DependencyInjection\Definition');
+        $definition = $this->getMockBuilder('Symfony\Component\DependencyInjection\Definition')->getMock();
         $definition->expects($this->atLeastOnce())
             ->method('getClass')
             ->will($this->returnValue($taggedServiceClass));

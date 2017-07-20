@@ -23,7 +23,7 @@ use Broadway\Serializer\SerializerInterface;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Schema\Schema;
-use Facile\DoctrineMySQLComeBack\Doctrine\DBAL\Statement;
+use Doctrine\DBAL\Driver\Statement as DriverStatement;
 use Doctrine\DBAL\Version;
 use Rhumsaa\Uuid\Uuid;
 
@@ -109,7 +109,7 @@ class DBALEventStore implements EventStoreInterface, EventStoreManagementInterfa
         return $events[0];
     }
 
-    private function executeStatement(Statement $statement)
+    private function executeStatement(DriverStatement $statement)
     {
         $statement->execute();
 

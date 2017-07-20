@@ -60,7 +60,7 @@ class ElasticSearchRepository implements RepositoryInterface
             'type' => $serializedReadModel['class'],
             'id' => $data->getId(),
             'body' => $serializedReadModel['payload'],
-            'refresh' => true,
+            'refresh' => "true",
         ];
         $this->client->index($params);
     }
@@ -113,10 +113,10 @@ class ElasticSearchRepository implements RepositoryInterface
         try {
             $this->client->delete(
                 [
-                    'id' => $id,
+                    'id' => (string)$id,
                     'index' => $this->index,
                     'type' => $this->class,
-                    'refresh' => true,
+                    'refresh' => "true",
                 ]
             );
         } catch (Missing404Exception $e) { // It was already deleted or never existed, fine by us!
