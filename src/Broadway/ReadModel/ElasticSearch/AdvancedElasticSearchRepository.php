@@ -69,7 +69,7 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
      * Actually persist in memory readmodels to elasticsearch
      * @throws Conflict409Exception
      */
-    public function flush(ReadModelInterface $data)
+    protected function flush(ReadModelInterface $data)
     {
         $serializedReadModel = $this->serializer->serialize($data);
 
@@ -78,7 +78,7 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
             'type' => $serializedReadModel['class'],
             'id' => $data->getId(),
             'body' => $serializedReadModel['payload'],
-            "refresh" => "true"
+            "refresh" => "true",
         ];
 
         if (isset($this->versions[$data->getId()])) {
@@ -90,7 +90,7 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
         try {
             $this->client->index($params);
         } catch (Conflict409Exception $e) {
-            unset($this->versions[$data->getId()]);
+            unset($this->versions[$data->getId()]); // make sure to remove in memory data because it's not up to date
             unset($this->models[$data->getId()]);
 
             throw $e;// Enable retrying upstream
@@ -99,6 +99,9 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
         $this->versions[$data->getId()] += 1;
     }
 
+    /**
+     *  Persist all in memory readmodels
+     */
     public function flushAll()
     {
         foreach ($this->models as $model) {
@@ -241,7 +244,8 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
      */
     private function deserializeHit(array $hit)
     {
-        if (array_key_exists($hit['_id'], $this->models)) {//Model already exists in memory
+        //Model already exists in memory and has same or later version, return in memory variant
+        if (array_key_exists($hit['_id'], $this->models) && $this->versions[$hit["_id"]] >= $hit["_version"]) {
             return $this->models[$hit['_id']];
         }
 
