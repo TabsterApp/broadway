@@ -160,7 +160,48 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
             return array();
         }
 
+        $inMemory = $this->findByInMemory($fields);
+        if (!empty($inMemory)) {
+            return $inMemory;
+        }
+
+
         return $this->query($this->buildFindByQuery($fields));
+    }
+
+    /**
+     * Check if object exists in memory.
+     * Use reflection to enable searching for private/protected properties as well
+     *
+     * @param array $fields
+     * @return array
+     */
+    protected function findByInMemory(array $fields)
+    {
+        return array_values(
+            array_filter(
+                $this->models,
+                function ($model) use ($fields) {
+                    $refClass = new \ReflectionClass(get_class($model));
+                    foreach ($fields as $field => $searchValue) {
+                        if (property_exists(get_class($model), $field)) {
+                            $property = $refClass->getProperty($field);
+                            $property->setAccessible(true);
+                            $modelValue = $property->getValue($model);
+                            if (is_array($modelValue) && !in_array($searchValue, $modelValue)) {
+                                return false;
+                            } elseif ($modelValue !== $searchValue) {
+                                return false;
+                            }
+                        } else {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                }
+            )
+        );
     }
 
     private function buildFindByQuery(array $fields)
