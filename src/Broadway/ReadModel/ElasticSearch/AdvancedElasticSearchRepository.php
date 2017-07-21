@@ -63,7 +63,7 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
         $this->changed[$data->getId()] = true;
 
         if ($flush) {
-            $this->flush($data);
+            $this->persist($data);
         }
     }
 
@@ -71,7 +71,7 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
      * Actually persist in memory readmodels to elasticsearch
      * @throws Conflict409Exception
      */
-    protected function flush(ReadModelInterface $data)
+    protected function persist(ReadModelInterface $data)
     {
         $serializedReadModel = $this->serializer->serialize($data);
 
@@ -99,15 +99,18 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
         }
 
         $this->versions[$data->getId()] += 1;
+        unset($this->changed[$data->getId()]); // Make sure readmodels are only persisted when actually changed
     }
 
     /**
-     *  Persist all in memory readmodels
+     *  Persist all changed in memory models
      */
-    public function flushAll()
+    public function persistAll()
     {
-        foreach ($this->changed as $modelKey => $value) {
-            $this->flush($this->models[$modelKey]);
+        foreach ($this->changed as $modelKey => $isChanged) {
+            if ($isChanged) {
+                $this->persist($this->models[$modelKey]);
+            }
         }
     }
 
@@ -246,21 +249,20 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
      */
     private function deserializeHit(array $hit)
     {
-        //Model already exists in memory and has same or later version, return in memory variant
-        if (array_key_exists($hit['_id'], $this->models) && $this->versions[$hit["_id"]] >= $hit["_version"]) {
-            return $this->models[$hit['_id']];
-        }
-
         if (array_key_exists('_version', $hit)) {
             $this->versions[$hit['_id']] = $hit['_version'];
         }
 
-        return $this->serializer->deserialize(
+        $model = $this->serializer->deserialize(
             array(
                 'class' => $hit['_type'],
                 'payload' => $hit['_source'],
             )
         );
+
+        $this->models[$hit['_id']] = $model;
+
+        return $model;
     }
 
     /**
