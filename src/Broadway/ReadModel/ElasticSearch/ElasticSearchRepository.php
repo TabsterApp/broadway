@@ -278,10 +278,13 @@ class ElasticSearchRepository implements RepositoryInterface
     private function createNotAnalyzedFieldsMapping(array $notAnalyzedFields)
     {
         $fields = [];
-        foreach ($notAnalyzedFields as $field) {
+        foreach ($notAnalyzedFields as $field)
+        {
+            # Index fields as keywords. See link below about migration and backwards compatibility
+            # https://www.elastic.co/blog/strings-are-dead-long-live-strings
             $fields[$field] = [
-                'type' => 'string',
-                'index' => 'not_analyzed',
+                "type" => "keyword",
+                "index" => true
             ];
         }
 
