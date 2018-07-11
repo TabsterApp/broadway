@@ -20,7 +20,7 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
     private $serializer;
     private $index;
     private $class;
-    private $notAnalyzedFields;
+    private $keywordFields;
 
     private $models = [];
     private $versions = [];
@@ -29,23 +29,23 @@ class AdvancedElasticSearchRepository extends ElasticSearchRepository
     /**
      * @param string $index
      * @param string $class
-     * @param array $notAnalyzedFields = array
+     * @param array $keywordFields = array
      */
     public function __construct(
         Client $client,
         SerializerInterface $serializer,
         $index,
         $class,
-        array $notAnalyzedFields = array(),
+        array $keywordFields = array(),
         $environment
     ) {
-        parent::__construct($client, $serializer, $index, $class, $notAnalyzedFields, $environment);
+        parent::__construct($client, $serializer, $index, $class, $keywordFields, $environment);
 
         $this->client = $client;
         $this->serializer = $serializer;
         $this->index = $environment.'_'.$index;
         $this->class = $class;
-        $this->notAnalyzedFields = $notAnalyzedFields;
+        $this->keywordFields = $keywordFields;
         $this->models = [];
         $this->versions = [];
     }

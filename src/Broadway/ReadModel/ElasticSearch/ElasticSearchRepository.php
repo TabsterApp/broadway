@@ -26,26 +26,26 @@ class ElasticSearchRepository implements RepositoryInterface
     private $serializer;
     private $index;
     private $class;
-    private $notAnalyzedFields;
+    private $keywordFields;
 
     /**
      * @param string $index
      * @param string $class
-     * @param array $notAnalyzedFields = array
+     * @param array $keywordFields = array
      */
     public function __construct(
         Client $client,
         SerializerInterface $serializer,
         $index,
         $class,
-        array $notAnalyzedFields = [],
+        array $keywordFields = [],
         $environment
     ) {
         $this->client = $client;
         $this->serializer = $serializer;
         $this->index = $environment.'_'.$index;
         $this->class = $class;
-        $this->notAnalyzedFields = $notAnalyzedFields;
+        $this->keywordFields = $keywordFields;
     }
 
     /**
@@ -228,14 +228,14 @@ class ElasticSearchRepository implements RepositoryInterface
         $indexParams = [
             'index' => $this->index,
         ];
-        if (count($this->notAnalyzedFields)) {
+        if (count($this->keywordFields)) {
             $indexParams['body'] = [
                 'mappings' => [
                     $class => [
                         '_source' => [
                             'enabled' => true,
                         ],
-                        'properties' => $this->createNotAnalyzedFieldsMapping($this->notAnalyzedFields),
+                        'properties' => $this->createNotAnalyzedFieldsMapping($this->keywordFields),
                     ],
                 ],
             ];
@@ -275,10 +275,10 @@ class ElasticSearchRepository implements RepositoryInterface
         return isset($response['status']) && $response['status'] !== 'red';
     }
 
-    private function createNotAnalyzedFieldsMapping(array $notAnalyzedFields)
+    private function createNotAnalyzedFieldsMapping(array $keywords)
     {
         $fields = [];
-        foreach ($notAnalyzedFields as $field)
+        foreach ($keywords as $field)
         {
             # Index fields as keywords. See link below about migration and backwards compatibility
             # https://www.elastic.co/blog/strings-are-dead-long-live-strings
